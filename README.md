@@ -1,4 +1,4 @@
 # Geometric-algorithms
-1.convex hull
-2.smallest_enclosing_circle
-_
+	1.convex hull
+	2.smallest_enclosing_circle
+
