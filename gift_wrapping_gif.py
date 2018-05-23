@@ -40,23 +40,22 @@ def gift_wrapping():
         pointOnHull = endPoint
 
         tmpPath=np.array([path[k] for k in range(n) if path[k] is not None])
-        print(tmpPath)
+       
         if len(tmpPath) > 1 :
             plt.clf()
             plt.plot(tmpPath[:,0],tmpPath[:,1],'b-',picker=5)
             plt.plot(S[:,0],S[:,1],".r")
-            plt.axis('off')
+            plt.axis('on')
             plt.xlabel('epoch {0}'.format(epoch))
             plt.show(block=False)
             plt.pause(0.0000001)
             epoch+=1
-
-
+        
         if endPoint[0] == path[0][0] and endPoint[1] == path[0][1]:
             break
     
     path=clear_path(path)
-    return path,S
+#    return path,S
 
 
 def clear_path(p):
@@ -77,6 +76,5 @@ def plot(L,P):
 
 
 if __name__ == "__main__":
-    path,total=gift_wrapping()
-    plot(path,total)
-    
+    #path,total=gift_wrapping()
+    gift_wrapping()
