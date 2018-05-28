@@ -1,7 +1,6 @@
 #-*- coding: utf-8 -*-
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.animation  import FuncAnimation 
 def generate_data(low,high,size):
     return np.random.randint(low,high,size=size)
 def get_lowest_point(data):
@@ -48,7 +47,7 @@ def gift_wrapping():
             plt.axis('on')
             plt.xlabel('epoch {0}'.format(epoch))
             plt.show(block=False)
-            plt.pause(0.0000001)
+            plt.pause(0.01)
             epoch+=1
         
         if endPoint[0] == path[0][0] and endPoint[1] == path[0][1]:
@@ -56,7 +55,8 @@ def gift_wrapping():
     
     path=clear_path(path)
 #    return path,S
-
+    plt.close()
+    final_plot(path,S,plt)
 
 def clear_path(p):
     while p[-1] is None :
@@ -65,13 +65,14 @@ def clear_path(p):
     return p
 
 
-def plot(L,P):
-
-    plt.figure()
+def final_plot(L,P,plt):  
+    plt.clf()
+    #plt.figure()
     plt.plot(L[:,0],L[:,1], 'b-', picker=5)
     plt.plot([L[-1,0],L[0,0]],[L[-1,1],L[0,1]], 'b-', picker=5)
     plt.plot(P[:,0],P[:,1],".r")
-    plt.axis('off')
+    plt.xlabel('Final result')
+    plt.axis('on')
     plt.show()
 
 
