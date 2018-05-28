@@ -1,13 +1,12 @@
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import numpy as np
-import random
 import itertools
 from tqdm import tqdm
 def generate_data(n,size):
     return np.random.randint(n,size=size)
 
-def plot(set_P,set_facet):
+def plot(set_P,un_set_point):
     fig=plt.figure()
     ax=fig.add_subplot(111,projection='3d')
     xs=set_P[:,0]
@@ -15,12 +14,16 @@ def plot(set_P,set_facet):
     zs=set_P[:,2]
     ax.scatter(xs,ys,zs,c='b',marker='o')
     #xv=set_P[:4,:]
+    set_facet=[]
+    for planar in itertools.combinations(un_set_point,3):
+        set_facet.append(list(planar))
+    print(len(un_set_point))
     for index ,face in enumerate(set_facet):
         xv=face
-        ax.plot ( [ xv[0,0], xv[1,0] ], [ xv[0,1], xv[1,1] ], [ xv[0,2], xv[1,2] ], 'r' )
-        ax.plot ( [ xv[0,0], xv[2,0] ], [ xv[0,1], xv[2,1] ], [ xv[0,2], xv[2,2] ], 'r' )
+        ax.plot ( [ xv[0][0], xv[1][0] ], [ xv[0][1], xv[1][1] ], [ xv[0][2],xv[1][2] ], 'r' )
+        ax.plot ( [ xv[0][0], xv[2][0] ], [ xv[0][1], xv[2][1] ], [ xv[0][2], xv[2][2] ], 'r' )
         #ax.plot ( [ xv[0,0], xv[3,0] ], [ xv[0,1], xv[3,1] ], [ xv[0,2], xv[3,2] ], 'r' )
-        ax.plot ( [ xv[1,0], xv[2,0] ], [ xv[1,1], xv[2,1] ], [ xv[1,2], xv[2,2] ], 'r' )
+        ax.plot ( [ xv[1][0], xv[2][0] ], [ xv[1][1], xv[2][1] ], [ xv[1][2], xv[2][2] ], 'r' )
         #ax.plot ( [ xv[1,0], xv[3,0] ], [ xv[1,1], xv[3,1] ], [ xv[1,2], xv[3,2] ], 'r' )
         #ax.plot ( [ xv[2,0], xv[3,0] ], [ xv[2,1], xv[3,1] ], [ xv[2,2], xv[3,2] ], 'r' )
 
@@ -28,7 +31,7 @@ def plot(set_P,set_facet):
 
 def find_tetrahedron(set_P) :
     while True:
-        np.random.shuffle(set_P)
+        
         p1=set_P[0]
         p2=set_P[1]
         p3=set_P[2]
@@ -41,7 +44,60 @@ def find_tetrahedron(set_P) :
             print(np.dot(p1p4,np.cross(p1p2,p1p3)))
             if np.dot(p1p4,np.cross(p1p2,p1p3)) !=0: break # AD。(AB X AC) = 0 => coplanar
         else : continue
-    return p1,p2,p3,p4,set_P            
+
+        
+    return p1,p2,p3,p4,set_P       
+
+def find_tetrahedron_new(set_P):
+    while True:
+        vectorAB=set_P[0]-set_P[1]
+        vectorAC=set_P[0]-set_P[2]
+        if np.sum(np.cross(vectorAB,vectorAC))!=0:
+            face=[set_P[0],set_P[1],set_P[2]]
+            fourCentroid=first_centroid(set_P,face)
+            faceIndex=[0,1,2]
+
+            face1=[set_P[3],set_P[0],set_P[1]]
+            a,b,c,d=compute_plane(face1)
+            if is_Visible(a,b,c,d,fourCentroid): 
+                face1=filp(face1)
+                face1Index=[0,3,1]
+            else:face1Index=[3,0,1]
+                
+            face2=[set_P[3],set_P[1],set_P[2]]
+            a,b,c,d=compute_plane(face2)
+            if is_Visible(a,b,c,d,fourCentroid): 
+                face2=filp(face2)
+                face2Index=[1,3,2]
+            else:face2Index=[3,1,2]
+
+            face3=[set_P[3],set_P[2],set_P[0]]
+            a,b,c,d=compute_plane(face3)
+            if is_Visible(a,b,c,d,fourCentroid): 
+                face3=filp(face3)
+                face3Index=[2,3,0]
+            else:face3Index=[3,2,0]
+            
+            faceList=[face,face1,face2,face3]
+            faceIndexList=[faceIndex,face1Index,face2Index,face3Index]
+            break
+        else:
+            np.random.shuffle(set_P)
+
+    return faceList,faceIndexList,set_P       
+  
+def first_centroid(set_P,face):
+    x=(set_P[0][0]+set_P[1][0]+set_P[2][0]+set_P[3][0])/4
+    y=(set_P[0][1]+set_P[1][1]+set_P[2][1]+set_P[3][1])/4
+    z=(set_P[0][2]+set_P[1][2]+set_P[2][2]+set_P[3][2])/4
+    centroid=np.array([x,y,z])
+    return centroid
+
+def filp(face):
+    tmp=face[0]
+    face[0]=face[1]
+    face[1]=tmp
+    return face
 
 def compute_plane(face): #用平面方程式：ax+by+cz+d=0  ==>  大於0就是看得到
     a  =  (face[1][1]-face[0][1])*(face[2][2]-face[0][2])-(face[1][2]-face[0][2])*(face[2][1]-face[0][1])
@@ -61,100 +117,122 @@ def get_centroid(face):
     centroidPointY=(p1[1]+p2[1]+p3[1])/3
     centroidPointZ=(p1[2]+p2[2]+p3[2])/3
     return np.array([centroidPointX,centroidPointY,centroidPointZ])
+def conflict_graph(set_Remain,tetrahedron):
+    set_facet=tetrahedron
+    conflictListP=[]
+    conflictListF=[]
+    for pointIndex, point in enumerate(set_P):
+        if pointIndex >3 : 
+            facePairList=[]
+            for faceIndex, face in enumerate(set_facet):
+                a,b,c,d=compute_plane(face)
+                if is_Visible(a,b,c,d,point):
+                    facePairList.append(faceIndex)
+            conflictListP.append(facePairList)
+        else :
+            conflictListP.append([])
+    for faceIndex, face in enumerate(set_facet):
+        pointPairList=[]
+        a,b,c,d=compute_plane(face)
+        for pointIndex, point in enumerate(set_P):
+            if pointIndex > 3:
+                if is_Visible(a,b,c,d,point):
+                    pointPairList.append(pointIndex)
+        conflictListF.append(pointPairList)
 
-def main(set_Remain,set_C):
-    #兩種狀態 visible invisible
-    """convexEdge_count=6
-    convexPoint_count=4
-    convexFacet_count=2+convexEdge_count-convexPoint_count"""
-    set_facet=[]    
-    #point_conflict=[]
-    #facet_conflict=[]
-    for planar in itertools.combinations(set_C,3):
-        set_facet.append(list(planar))
-    
-    tmpFaceSet=[]
-    visibleFacetList=[] 
+    return conflictListP,conflictListF
 
-    for pointIndex, point in tqdm(enumerate(set_Remain)): #還沒加入的點集
-        
-        tmp_set_facet=[] #原本的facet 資訊給 tmp 做完處理後並更新 
-        for faceIndex,face in enumerate(set_facet):
-            tmp_set_facet.append(face)
-        #挑出該點 看得到的facet  
-        for faceIndex,face in enumerate(set_facet):  
-            a,b,c,d=compute_plane(face)# 算出平面方程式 
-            if is_Visible(a,b,c,d,point): 
-                visibleFacetList.append(faceIndex)
-        #print("Index: %d visible Face List %s " %(pointIndex,visibleFacetList))
-        
-        if  len(visibleFacetList) == 0 : continue # 表示在Convex Hull 內
-        
-        # 將該點看得到的面 從 tmp_set_face (被認定為convex hull的部分) 剔除
-        for index ,faceIndex  in enumerate(visibleFacetList):
-            #if tmp_set_facet[faceIndex] in set_facet : set_facet.remove(tmp_set_facet[faceIndex])
-            face=tmp_set_facet[faceIndex]
-            try:
-                index=set_facet.index(face)
-            except ValueError :
-                continue 
-            else:
-                set_facet.pop(index)
-        # 如果剛好只看到一個facet     
-        if  len(visibleFacetList) == 1 : # 直接 與 該facet三個點 連接 並消除 該facet
-            faceIndex=visibleFacetList[0]
-            oldPlanar=tmp_set_facet[faceIndex]
-            set_facet.append(np.array([point,oldPlanar[0],oldPlanar[1]]))
-            set_facet.append(np.array([point,oldPlanar[1],oldPlanar[2]]))
-            set_facet.append(np.array([point,oldPlanar[0],oldPlanar[2]]))
-            continue 
-        else : # 可以看到很多個facet
-            
-            for index ,faceIndex  in enumerate(visibleFacetList):
-                oldPlanar=tmp_set_facet[faceIndex]
-                tmpFaceSet.append(np.array([point,oldPlanar[0],oldPlanar[1]]))
-                tmpFaceSet.append(np.array([point,oldPlanar[1],oldPlanar[2]]))
-                tmpFaceSet.append(np.array([point,oldPlanar[0],oldPlanar[2]]))
-            
-            for faceIndex, face in  enumerate(tmpFaceSet):
-                for otherIndex, otherFace in enumerate(tmpFaceSet):
-                    if faceIndex != otherIndex :
-                        a,b,c,d=compute_plane(face)
-                        if is_Visible(a,b,c,d,get_centroid(otherFace)):
-                            face=None
-                            break
-                if face is not None:
-                    set_facet.append(face)
+def main(set_P,firstTetrahedron,firstIndexList):
+    set_facet=[]
+    set_facet_toPointIndexList=firstIndexList
+    for faceIndex,face in enumerate(firstTetrahedron):
+        set_facet.append(face)
+    #print(set_facet)
+    #init conflict graph
+    conflictP_findF,conflictF_findP=conflict_graph(set_P,firstTetrahedron)
+    print("conflictP_findF:",conflictP_findF)
+    print("conflictF_findP:",conflictF_findP)
     
-    #fig=plt.figure()
-    #ax=fig.add_subplot(111,projection='3d')
-    return set_facet
-        
+    for pointIndex,point in enumerate(set_P):
+        if pointIndex >3 and len(conflictP_findF[pointIndex])!=0:
+            insidePointList=list(range(0, pointIndex))  #[0 ~ potintIndex-1]
+            print(insidePointList)
+            print("pointIndex:%d list: %s"%(pointIndex,conflictP_findF[pointIndex]))
+            #Delete all facets in conflictP_findF[pointIndex] from graph 
+            #create the boundary of visible region of pointIndex and create horizon edges in order  (counterclockwise)
+            
+            visibleList=conflictP_findF[pointIndex]
+            visiblePointListTmp,visiblePointList,boundaryPointList,edgePairList=[],[],[],[]
+            
+            for i in range(len(visibleList)): #this point can see the points of the facets merge in list 
+                visiblePointListTmp+=set_facet_toPointIndexList[visibleList[i]]   
+            visiblePointList=list(set(visiblePointListTmp))
+            
+            for i  in range(len(visiblePointList)):
+                if visiblePointList[i] in insidePointList :#Intersection between visible point set and unvisible point set is boundary
+                    boundaryPointList.append(visiblePointList[i])     
+                               
+            
+            
+            
+            print("visiblePointList:",visiblePointList)
+            print("boundaryPointList:",boundaryPointList)
+            print("=============================")
+            #visibleFaceList,unVisibleFaceList=get_facet_point(set_facet,visibleList)
+            #visibleEdgeList=get_boundary_point(visibleFaceList,unVisibleFaceList)
+
+            
+def get_facet_point(set_facet,visibleList):
+    unVisibleFaceList=[]
+    visibleFaceList=[]
+    for i in range(len(set_facet)):
+        if i not in visibleList:
+            unVisibleFaceList.append(set_facet[i])
+        else :  
+            visibleFaceList.append(set_facet[i])  
+    return visibleFaceList,unVisibleFaceList
+
+def get_boundary_point(visibleFaceList,unVisibleFaceList):
+    edgeSet=[]
+    visiblePointList=[]
+    unVisiblePointList=[]
+    for faceIndex,face in enumerate(visibleFaceList):
+        for pointIndex,point in enumerate(face):
+            visiblePointList.append(point)
+
+    for faceIndex,face in enumerate(unVisibleFaceList):
+        for pointIndex,point in enumerate(face):
+            unVisiblePointList.append(point)
+
+    
+    return edgeSet          
+            
+
+
        
 
 if __name__ == "__main__":
-    set_P_count=15
-    set_P=generate_data(30,(set_P_count,3))
-    p1,p2,p3,p4,set_P=find_tetrahedron(set_P)
-    set_C=np.array(set_P[:4])
-    set_Remain=np.delete(set_P,[0,1,2,3],axis=0)
-    set_facet=main(set_Remain,set_C)
-    plot(set_P,set_facet)
-"""
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
+    set_P_count=20
+    set_P=generate_data(10,(set_P_count,3))
+    firstTetrahedron,firstIndexList,set_P=find_tetrahedron_new(set_P)
+    #plot(set_P,firstTetrahedron)
+ 
+    #set_Remain=np.delete(set_P,[0,1,2,3],axis=0)
+    main(set_P,firstTetrahedron,firstIndexList)
+    """set_facet=main(set_Remain,firstTetrahedron)
+    print(set_facet)
+    set_point=[]
+    for i in range(len(set_facet)):
+        for j in range(len(set_facet[i])):
+            set_point.append(list(set_facet[i][j]))
 
-n = 100
-
-# For each set of style and range settings, plot n random points in the box
-# defined by x in [23, 32], y in [0, 100], z in [zlow, zhigh].
-for c, m, zlow, zhigh in [('r', 'o', -50, -25), ('b', '^', -30, -5)]:
-    xs = randrange(n, 23, 32)
-    ys = randrange(n, 0, 100)
-    zs = randrange(n, zlow, zhigh)
-    ax.scatter(xs, ys, zs, c=c, marker=m)
-
-ax.set_xlabel('X Label')
-ax.set_ylabel('Y Label')
-ax.set_zlabel('Z Label')
-plt.show()"""
+    print(set_point)
+    un_set_point=[]
+    for i , p in enumerate(set_point):
+        if i==0:un_set_point.append(p)
+        else: 
+            if p not in un_set_point:
+                un_set_point.append(p)
+    print(un_set_point)
+    plot(set_P,un_set_point)
+    """
