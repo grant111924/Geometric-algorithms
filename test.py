@@ -60,4 +60,56 @@ def main_old(set_Remain,firstTetrahedron):
                     set_facet.append(face)
 
     return set_facet
-        
+
+def get_centroid(face):
+    p1=face[0]
+    p2=face[1]
+    p3=face[2]
+    centroidPointX=(p1[0]+p2[0]+p3[0])/3
+    centroidPointY=(p1[1]+p2[1]+p3[1])/3
+    centroidPointZ=(p1[2]+p2[2]+p3[2])/3
+    return np.array([centroidPointX,centroidPointY,centroidPointZ])
+
+
+#visibleFaceList,unVisibleFaceList=get_facet_point(set_facet,visibleList)
+#visibleEdgeList=get_boundary_point(visibleFaceList,unVisibleFaceList)
+def get_facet_point(set_facet,visibleList):
+    unVisibleFaceList=[]
+    visibleFaceList=[]
+    for i in range(len(set_facet)):
+        if i not in visibleList:
+            unVisibleFaceList.append(set_facet[i])
+        else :  
+            visibleFaceList.append(set_facet[i])  
+    return visibleFaceList,unVisibleFaceList
+
+def get_boundary_point(visibleFaceList,unVisibleFaceList):
+    edgeSet=[]
+    visiblePointList=[]
+    unVisiblePointList=[]
+    for faceIndex,face in enumerate(visibleFaceList):
+        for pointIndex,point in enumerate(face):
+            visiblePointList.append(point)
+
+    for faceIndex,face in enumerate(unVisibleFaceList):
+        for pointIndex,point in enumerate(face):
+            unVisiblePointList.append(point)
+
+    
+    return edgeSet   
+
+def find_tetrahedron(set_P) :
+    while True:
+        p1=set_P[0]
+        p2=set_P[1]
+        p3=set_P[2]
+        p4=set_P[3]
+        p1p2=p2-p1
+        p1p3=p3-p1
+        print(np.cross(p1p2,p1p3))
+        if  np.count_nonzero(np.cross(p1p2,p1p3)) ==3 :
+            p1p4=p4-p1
+            print(np.dot(p1p4,np.cross(p1p2,p1p3)))
+            if np.dot(p1p4,np.cross(p1p2,p1p3)) !=0: break # AD。(AB X AC) = 0 => coplanar
+        else : continue
+    return p1,p2,p3,p4,set_P     

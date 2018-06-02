@@ -6,49 +6,26 @@ from tqdm import tqdm
 def generate_data(n,size):
     return np.random.randint(n,size=size)
 
-def plot(set_P,un_set_point):
+def tetrahedron_plot(set_P,set_facet):
     fig=plt.figure()
     ax=fig.add_subplot(111,projection='3d')
     xs=set_P[:,0]
     ys=set_P[:,1] 
     zs=set_P[:,2]
     ax.scatter(xs,ys,zs,c='b',marker='o')
-    #xv=set_P[:4,:]
-    set_facet=[]
-    for planar in itertools.combinations(un_set_point,3):
-        set_facet.append(list(planar))
-    print(len(un_set_point))
     for index ,face in enumerate(set_facet):
-        xv=face
+        xv=[set_P[face[0]],set_P[face[1]],set_P[face[2]]]
+        #xv=face
         ax.plot ( [ xv[0][0], xv[1][0] ], [ xv[0][1], xv[1][1] ], [ xv[0][2],xv[1][2] ], 'r' )
         ax.plot ( [ xv[0][0], xv[2][0] ], [ xv[0][1], xv[2][1] ], [ xv[0][2], xv[2][2] ], 'r' )
         #ax.plot ( [ xv[0,0], xv[3,0] ], [ xv[0,1], xv[3,1] ], [ xv[0,2], xv[3,2] ], 'r' )
         ax.plot ( [ xv[1][0], xv[2][0] ], [ xv[1][1], xv[2][1] ], [ xv[1][2], xv[2][2] ], 'r' )
         #ax.plot ( [ xv[1,0], xv[3,0] ], [ xv[1,1], xv[3,1] ], [ xv[1,2], xv[3,2] ], 'r' )
         #ax.plot ( [ xv[2,0], xv[3,0] ], [ xv[2,1], xv[3,1] ], [ xv[2,2], xv[3,2] ], 'r' )
-
     plt.show()
+  
 
-def find_tetrahedron(set_P) :
-    while True:
-        
-        p1=set_P[0]
-        p2=set_P[1]
-        p3=set_P[2]
-        p4=set_P[3]
-        p1p2=p2-p1
-        p1p3=p3-p1
-        print(np.cross(p1p2,p1p3))
-        if  np.count_nonzero(np.cross(p1p2,p1p3)) ==3 :
-            p1p4=p4-p1
-            print(np.dot(p1p4,np.cross(p1p2,p1p3)))
-            if np.dot(p1p4,np.cross(p1p2,p1p3)) !=0: break # AD。(AB X AC) = 0 => coplanar
-        else : continue
-
-        
-    return p1,p2,p3,p4,set_P       
-
-def find_tetrahedron_new(set_P):
+def find_tetrahedron(set_P):
     while True:
         vectorAB=set_P[0]-set_P[1]
         vectorAC=set_P[0]-set_P[2]
@@ -93,6 +70,15 @@ def first_centroid(set_P,face):
     centroid=np.array([x,y,z])
     return centroid
 
+def get_centroid(set_P,face):
+    p1=set_P[face[0]]
+    p2=set_P[face[1]]
+    p3=set_P[face[2]]
+    centroidPointX=(p1[0]+p2[0]+p3[0])/3
+    centroidPointY=(p1[1]+p2[1]+p3[1])/3
+    centroidPointZ=(p1[2]+p2[2]+p3[2])/3
+    return np.array([centroidPointX,centroidPointY,centroidPointZ])
+
 def filp(face):
     tmp=face[0]
     face[0]=face[1]
@@ -108,21 +94,17 @@ def compute_plane(face): #用平面方程式：ax+by+cz+d=0  ==>  大於0就是�
 
 def is_Visible(a,b,c,d,point):
     return (a*point[0]+b*point[1]+c*point[2]+d)>0
+def is_Coplanar(plane1,plane2):
+    plane1=np.array(plane1)
+    plane2=np.array(plane2)
+    return np.all(plane1 * np.linalg.norm(plane2) - plane2 * np.linalg.norm(plane1) == 0)
 
-def get_centroid(face):
-    p1=face[0]
-    p2=face[1]
-    p3=face[2]
-    centroidPointX=(p1[0]+p2[0]+p3[0])/3
-    centroidPointY=(p1[1]+p2[1]+p3[1])/3
-    centroidPointZ=(p1[2]+p2[2]+p3[2])/3
-    return np.array([centroidPointX,centroidPointY,centroidPointZ])
-def conflict_graph(set_Remain,tetrahedron):
+def conflict_graph(num,set_Remain,tetrahedron):
     set_facet=tetrahedron
     conflictListP=[]
     conflictListF=[]
     for pointIndex, point in enumerate(set_P):
-        if pointIndex >3 : 
+        if pointIndex > num : 
             facePairList=[]
             for faceIndex, face in enumerate(set_facet):
                 a,b,c,d=compute_plane(face)
@@ -135,21 +117,44 @@ def conflict_graph(set_Remain,tetrahedron):
         pointPairList=[]
         a,b,c,d=compute_plane(face)
         for pointIndex, point in enumerate(set_P):
-            if pointIndex > 3:
+            if pointIndex > num:
                 if is_Visible(a,b,c,d,point):
                     pointPairList.append(pointIndex)
         conflictListF.append(pointPairList)
 
     return conflictListP,conflictListF
 
+def counterclockwise(p,bList,set_P):
+    totalPointSum=np.array([0,0,0])
+    sortIndexList,sortList=[],[]
+    for i in range(len(bList)):
+        index=bList[i]
+        if i == 0 : 
+            totalPointSum+=set_P[index]    
+        else:    
+            totalPointSum+=set_P[index]
+    center=totalPointSum/len(bList)
+    print(center)
+    for index, pointIndex in enumerate(bList):
+        if index== 0:
+            tmp=set_P[pointIndex]
+            sortList.append((0,pointIndex))
+        else: 
+            x=np.dot(center-p,np.cross(tmp-center,set_P[pointIndex]-center))
+            sortList.append((x,pointIndex))
+    sortIndexList=sorted(sortList,key=lambda s: s[0])
+    result=[]
+    for index,item in enumerate(sortIndexList):
+        result.append(item[1])
+    return result
+    
 def main(set_P,firstTetrahedron,firstIndexList):
     set_facet=[]
     set_facet_toPointIndexList=firstIndexList
     for faceIndex,face in enumerate(firstTetrahedron):
         set_facet.append(face)
-    #print(set_facet)
     #init conflict graph
-    conflictP_findF,conflictF_findP=conflict_graph(set_P,firstTetrahedron)
+    conflictP_findF,conflictF_findP=conflict_graph(3,set_P,firstTetrahedron)
     print("conflictP_findF:",conflictP_findF)
     print("conflictF_findP:",conflictF_findP)
     
@@ -159,66 +164,105 @@ def main(set_P,firstTetrahedron,firstIndexList):
             print(insidePointList)
             print("pointIndex:%d list: %s"%(pointIndex,conflictP_findF[pointIndex]))
             #Delete all facets in conflictP_findF[pointIndex] from graph 
-            #create the boundary of visible region of pointIndex and create horizon edges in order  (counterclockwise)
-            
             visibleList=conflictP_findF[pointIndex]
+            #print("visibleList:",visibleList)
+            #print("set_facet_toPointIndexList:",set_facet_toPointIndexList)
+
+            set_facet_toPointIndexList_afterDel=[]
+            for index,item in enumerate(set_facet_toPointIndexList):
+                if index not in visibleList:
+                    set_facet_toPointIndexList_afterDel.append(item)
+            #print("set_facet_toPointIndexList_afterDel:",set_facet_toPointIndexList_afterDel)
+            #tetrahedron_plot(set_P,set_facet_toPointIndexList_afterDel)
+            #create the boundary of visible region of pointIndex and create horizon edges in order  (counterclockwise)
             visiblePointListTmp,visiblePointList,boundaryPointList,edgePairList=[],[],[],[]
-            
-            for i in range(len(visibleList)): #this point can see the points of the facets merge in list 
+
+            #this point can see the points of the facets merge in list 
+            for i in range(len(visibleList)): 
                 visiblePointListTmp+=set_facet_toPointIndexList[visibleList[i]]   
             visiblePointList=list(set(visiblePointListTmp))
-            
+
+            #Intersection between visible point set and unvisible point set is boundary
             for i  in range(len(visiblePointList)):
-                if visiblePointList[i] in insidePointList :#Intersection between visible point set and unvisible point set is boundary
-                    boundaryPointList.append(visiblePointList[i])     
-                               
-            
-            
-            
-            print("visiblePointList:",visiblePointList)
-            print("boundaryPointList:",boundaryPointList)
-            print("=============================")
-            #visibleFaceList,unVisibleFaceList=get_facet_point(set_facet,visibleList)
-            #visibleEdgeList=get_boundary_point(visibleFaceList,unVisibleFaceList)
+                if visiblePointList[i] in insidePointList :
+                    boundaryPointList.append(visiblePointList[i])   
 
-            
-def get_facet_point(set_facet,visibleList):
-    unVisibleFaceList=[]
-    visibleFaceList=[]
-    for i in range(len(set_facet)):
-        if i not in visibleList:
-            unVisibleFaceList.append(set_facet[i])
-        else :  
-            visibleFaceList.append(set_facet[i])  
-    return visibleFaceList,unVisibleFaceList
-
-def get_boundary_point(visibleFaceList,unVisibleFaceList):
-    edgeSet=[]
-    visiblePointList=[]
-    unVisiblePointList=[]
-    for faceIndex,face in enumerate(visibleFaceList):
-        for pointIndex,point in enumerate(face):
-            visiblePointList.append(point)
-
-    for faceIndex,face in enumerate(unVisibleFaceList):
-        for pointIndex,point in enumerate(face):
-            unVisiblePointList.append(point)
-
-    
-    return edgeSet          
+            # counterclockwise order boundary point set and create edge list                   
+            edgePointList=counterclockwise(point,boundaryPointList,set_P)
+            for i in range(len(edgePointList)):
+                if (i+1) < len(edgePointList):
+                    edgePairList.append([edgePointList[i],edgePointList[i+1]])
+                else :
+                    edgePairList.append([edgePointList[-1],edgePointList[0]])
             
 
+            print("edgePairList:",edgePairList)
+            set_facet_toPointIndexList_add=[]
+            for eIndex, edge in enumerate(edgePairList):#先找是否共邊 再判斷共面
+                newFacet=[edge[0],edge[1],pointIndex]
+                set_facet_toPointIndexList_add.append(newFacet)
+            #tetrahedron_plot(set_P,set_facet_toPointIndexList_add)
+            """for  i ,fIndex in enumerate(set_facet_toPointIndexList):
+                if edge[0] in fIndex and edge[1] in fIndex:
+                    newFacetPoint=[]
+                    for i in range(len(newFacet)):
+                        newFacetPoint.append(set_P[newFacet[i]])
+                    if is_Coplanar(compute_plane(newFacetPoint),compute_plane(set_facet[i])):
+                        newFacet+=set_facet
+                        newFacet=list(set(newFacet))
+                        facet_toPointIndexList.append(newFacet)
+                else:
+                    facet_toPointIndexList.append(newFacet)"""
+                    
+                            
+            #set_facet_toPointIndexList_add+=facet_toPointIndexList       
+            set_facet_toPointIndexList_add+= set_facet_toPointIndexList_afterDel
+            set_facet_toPointIndexList=set_facet_toPointIndexList_add
+            print("set_facet_toPointIndexList_add :",set_facet_toPointIndexList_add)
+            set_facet_toPointIndexList_finalDel=[]
+            for fIndex, face in enumerate(set_facet_toPointIndexList):
+                center=get_centroid(set_P,face)
+                for i, f in enumerate(set_facet_toPointIndexList):
+                    if i!=fIndex:
+                        fPoint=[]
+                        for j in range(len(f)):
+                            fPoint.append(set_P[f[j]])
+                        a,b,c,d=compute_plane(fPoint)
+                        if is_Visible(a,b,c,d,center):
+                             set_facet_toPointIndexList_finalDel.append(f)
+            #set_facet_toPointIndexList_finalDel=list(set(set_facet_toPointIndexList_finalDel))
+            print("set_facet_toPointIndexList_finalDel",set_facet_toPointIndexList_finalDel)
+            print("set_facet_toPointIndexList_add",set_facet_toPointIndexList_add)
+
+
+
+            #update conflict graph
+            newConvexHull=[]
+            for fIndex,face in enumerate(set_facet_toPointIndexList_add):
+                p1=set_P[face[0]]
+                p2=set_P[face[1]]
+                p3=set_P[face[2]]
+                newConvexHull.append([p1,p2,p3])
+            conflictP_findF,conflictF_findP=conflict_graph(pointIndex,set_P,newConvexHull)
+            print("set_facet_toPointIndexList :",set_facet_toPointIndexList)
+            print("conflictP_findF new:",conflictP_findF)
+            print("conflictF_findP new:",conflictF_findP)
+
+    tetrahedron_plot(set_P,set_facet_toPointIndexList)
+
+        
+
+        
 
        
 
 if __name__ == "__main__":
-    set_P_count=20
+    set_P_count=10
     set_P=generate_data(10,(set_P_count,3))
-    firstTetrahedron,firstIndexList,set_P=find_tetrahedron_new(set_P)
-    #plot(set_P,firstTetrahedron)
- 
-    #set_Remain=np.delete(set_P,[0,1,2,3],axis=0)
+    firstTetrahedron,firstIndexList,set_P=find_tetrahedron(set_P)
+    tetrahedron_plot(set_P,firstIndexList)
     main(set_P,firstTetrahedron,firstIndexList)
+
     """set_facet=main(set_Remain,firstTetrahedron)
     print(set_facet)
     set_point=[]
