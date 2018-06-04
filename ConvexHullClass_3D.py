@@ -4,10 +4,11 @@ import numpy as np
 from face import Face
 import random
 from tqdm import tqdm
+import time
 class ConvexHull3D(object):
-    def __init__(self,low=0,high=1,size=(15,3)):
-        #self.pointSet=np.random.randint(low,high,size=size)
-        count=15
+    def __init__(self,low=0,high=10,size=(5,3)):
+        self.pointSet=np.random.randint(low,high,size=size)
+        """count=10
         pointSet=np.zeros((count,3))
         for i in range(count):
             radius= (5 + np.random.random_sample())* 5
@@ -16,95 +17,115 @@ class ConvexHull3D(object):
             pointSet[i][0]=np.cos( theta ) * np.sin( phi ) * radius
             pointSet[i][1]=np.cos( phi ) * radius
             pointSet[i][2]=np.sin( theta ) * np.sin( phi ) * radius
-        """self.pointSet=np.array([ np.cos( theta ) * np.sin( phi ) * radius,\
-                                np.cos( phi ) * radius, \
-                                np.sin( theta ) * np.sin( phi ) * radius ])"""
-        self.pointSet=pointSet
+        self.pointSet=pointSet"""
         self.plt=plt
         
         
 
        
     def process(self):
-        
         firstFace=Face(self.pointSet,0,1,2)
         firstFaceCentroid=self.__centroid(3,firstFace)
         if firstFace.isVisible(firstFaceCentroid):firstFace.flip()
-        
+        print("normal firstFace:",[firstFace.a,firstFace.b,firstFace.c])
         face1=Face(self.pointSet,3,firstFace.pIndex1,firstFace.pIndex2)
         if face1.isVisible(firstFaceCentroid):face1.flip()
-
+        print("normal face1:",[face1.a,face1.b,face1.c])
         face2=Face(self.pointSet,3,firstFace.pIndex2,firstFace.pIndex3)
         if face2.isVisible(firstFaceCentroid):face2.flip()
-
+        print("normal face2:",[face2.a,face2.b,face2.c])
         face3=Face(self.pointSet,3,firstFace.pIndex3,firstFace.pIndex1)
         if face3.isVisible(firstFaceCentroid):face3.flip()
-
+        print("normal face3:",[face3.a,face3.b,face3.c])
         validFaces=[firstFace,face1,face2,face3]
         visibleFaces=[]
         tmpFaces=[]
         print("validFaces:",validFaces)
+        print("firstFaceCentroid",firstFaceCentroid)
+        
+        self.result=[]
+        for finalIndex, finalFace in enumerate(validFaces):
+            self.result.append([finalFace.pIndex1,finalFace.pIndex2,finalFace.pIndex3])
+        self.__plot()
+
         for index , point in enumerate(self.pointSet):
             if index > 3:
-                visibleFaces=[]
+                visibleFaces.clear()
+                print(point)
                 for fIndex, face in enumerate(validFaces):
-                    if face.isVisible(point):visibleFaces.append(face)
-        
-            if len(visibleFaces) == 0:continue
+                    if face.isVisible(point):
+                        print("face:",face)
+                        visibleFaces.append(face)
+                print("pointIndex: %d,visibleFaces: %s"%(index,visibleFaces))
             
-            #delete all visible faces from the validFaces list
-            for fIndex,face in enumerate(visibleFaces):
-                if face in validFaces: validFaces.remove(face)
+                if len(visibleFaces) == 0:continue
+                
+                #delete all visible faces from the validFaces list
+                for fIndex,face in enumerate(visibleFaces):
+                    if face in validFaces: 
+                        print(face)
+                        print("removeFace:",[face.pIndex1,face.pIndex2,face.pIndex3])
+                        validFaces.remove(face)
+                
+                # if only one face is visible  create 3 faces
+                if len(visibleFaces) == 1:
+                    face=visibleFaces[0]
+                    validFaces.append(Face(self.pointSet,index,face.pIndex1,face.pIndex2))
+                    validFaces.append(Face(self.pointSet,index,face.pIndex2,face.pIndex3))
+                    validFaces.append(Face(self.pointSet,index,face.pIndex3,face.pIndex1))
+                    continue
+                # create all possible  new faces from the visibleFacs list
+                tmpFaces=[]
+                for fIndex, face in enumerate(visibleFaces):
+                    tmpFaces.append(Face(self.pointSet,index,face.pIndex1,face.pIndex2))
+                    tmpFaces.append(Face(self.pointSet,index,face.pIndex2,face.pIndex3))
+                    tmpFaces.append(Face(self.pointSet,index,face.pIndex3,face.pIndex1))
+                # search  if there is a point in front of the face
+                # this means the face is not a boundary face 
+                for tIndex ,tmpFace in enumerate(tmpFaces):
+                    for oIndex, otherFace in enumerate(tmpFaces):
+                        if tIndex != oIndex:
+                            otherFace.getCentroid()
+                            if tmpFace.isVisible(otherFace.result):
+                                face=None
+                                break
+                    if tmpFace != None and tmpFace not in validFaces  :
+                        validFaces.append(tmpFace)
+                
+                print("validFaces:",len(validFaces))
             
-            # if only one face is visible  create 3 faces
-            if len(visibleFaces) == 1:
-                face=visibleFaces[0]
-                validFaces.append(Face(self.pointSet,index,face.pIndex1,face.pIndex2))
-                validFaces.append(Face(self.pointSet,index,face.pIndex2,face.pIndex3))
-                validFaces.append(Face(self.pointSet,index,face.pIndex3,face.pIndex1))
-                continue
-            # create all possible  new faces from the visibleFacs list
-            tmpFaces=[]
-            for fIndex, face in enumerate(visibleFaces):
-                tmpFaces.append(Face(self.pointSet,index,face.pIndex1,face.pIndex2))
-                tmpFaces.append(Face(self.pointSet,index,face.pIndex2,face.pIndex3))
-                tmpFaces.append(Face(self.pointSet,index,face.pIndex3,face.pIndex1))
-            # search  if there is a point in front of the face
-            # this means the face is not a boundary face 
-            for tIndex ,tmpFace in enumerate(tmpFaces):
-                for oIndex, otherFace in enumerate(tmpFaces):
-                    if tIndex != oIndex:
-                        otherFace.getCentroid()
-                        if tmpFace.isVisible(otherFace.result):
-                            face=None
-                            break
-                if tmpFace != None :
-                    validFaces.append(tmpFace)
-            
-        self.reuslt=[]
+         
+
+        self.result=[]
+        self.pointResult=[]
         for finalIndex, finalFace in enumerate(validFaces):
-            self.reuslt.append([finalFace.pIndex1,finalFace.pIndex2,finalFace.pIndex3])
-        
-            
-        """if finalIndex != 0:
-                for rIndex, rFace in enumerate(self.reuslt):
-                    if finalFace.pIndex1  in  rFace and finalFace.pIndex2  in  rFace and finalFace.pIndex3  in  rFace: continue
-                    else: self.reuslt.append([finalFace.pIndex1,finalFace.pIndex2,finalFace.pIndex3])
-            else:"""
+            self.result.append([finalFace.pIndex1,finalFace.pIndex2,finalFace.pIndex3])
+            self.pointResult.append(finalFace.pIndex1)
+            self.pointResult.append(finalFace.pIndex2)
+            self.pointResult.append(finalFace.pIndex3)
+        self.pointResult=list(set(self.pointResult))
         #print("visibleFaces:",visibleFaces)
         #print("validFaces:",validFaces)
         #self.reuslt=list(set(self.reuslt))
-        print("result :",self.reuslt)
+        print("result :",self.result)
+        print("pointResult :",self.pointResult)
+        self.__plot()
 
-    def plot(self):
+    def __plot(self):
         fig=self.plt.figure()
         ax=fig.add_subplot(111,projection='3d')
         xs=self.pointSet[:,0]
         ys=self.pointSet[:,1] 
         zs=self.pointSet[:,2]
         ax.scatter(xs,ys,zs,c='b',marker='o')
-        for index ,face in enumerate(self.reuslt):
+        for x, y, z in zip(xs, ys, zs):
+            label = '(%d, %d, %d)' % (x, y, z)
+            ax.text(x, y, z, label)
+
+
+        for index ,face in enumerate(self.result):
             xv=[self.pointSet[face[0]],self.pointSet[face[1]],self.pointSet[face[2]]]
+            ax.annotate('local max', xy=(2, 1), xytext=(3, 1.5),arrowprops=dict(facecolor='black', shrink=0.05),)
             ax.plot ( [ xv[0][0], xv[1][0] ], [ xv[0][1], xv[1][1] ], [ xv[0][2],xv[1][2] ], 'r' )
             ax.plot ( [ xv[0][0], xv[2][0] ], [ xv[0][1], xv[2][1] ], [ xv[0][2], xv[2][2] ], 'r' )
             ax.plot ( [ xv[1][0], xv[2][0] ], [ xv[1][1], xv[2][1] ], [ xv[1][2], xv[2][2] ], 'r' )
@@ -120,6 +141,11 @@ class ConvexHull3D(object):
 
 
 if __name__ == '__main__':
+
+    tStart = time.time()
     c=ConvexHull3D()
     c.process()
-    c.plot()
+    tEnd = time.time()
+    #c.plot()
+    print( "It cost %f sec" % (tEnd - tStart))
+    
