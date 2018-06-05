@@ -11,7 +11,7 @@ class Face(object):
         self.__computePlane()
         
     def isVisible(self, pointR):
-        return (self.a*pointR[0] + self.b*pointR[1]+ self.c*pointR[2]+self.d) >= 0
+        return (self.a*pointR[0] + self.b*pointR[1]+ self.c*pointR[2]+self.d)
 
     def getCentroid(self):
         p1=self.pointSet[self.pIndex1]
