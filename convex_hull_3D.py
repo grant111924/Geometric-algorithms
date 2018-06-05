@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import itertools
 from tqdm import tqdm
+
 def generate_data(n,size):
     return np.random.randint(n,size=size)
 
