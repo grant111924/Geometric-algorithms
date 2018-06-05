@@ -88,11 +88,3 @@ if __name__ =="__main__":
     x.gift_wrapping()
 
 
-
-"""self.plt.clf()
-                self.plt.plot(tmpPath[:,0],tmpPath[:,1],'b-',picker=5)
-                self.plt.plot(S[:,0],S[:,1],".r")
-                self.plt.axis('on')
-                self.plt.xlabel('epoch {0}'.format(epoch))
-                self.plt.show(block=False)
-                self.plt.pause(0.001)"""
