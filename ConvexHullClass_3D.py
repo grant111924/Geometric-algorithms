@@ -6,7 +6,7 @@ import random
 from tqdm import tqdm
 import time
 class ConvexHull3D(object):
-    def __init__(self,low=0,high=5,size=(5,3)):
+    def __init__(self,low=0,high=5,size=(10,3)):
         self.pointSet=np.random.randint(low,high,size=size)
         """count=10
         pointSet=np.zeros((count,3))
@@ -26,35 +26,15 @@ class ConvexHull3D(object):
     def process(self):
         firstFace=Face(self.pointSet,0,1,2)
         self.firstFaceCentroid=self.__centroid(3,firstFace)
-        print("normal firstFace point:",[firstFace.pIndex1,firstFace.pIndex2,firstFace.pIndex3])
         if firstFace.isVisible(self.firstFaceCentroid):firstFace.flip()
-        print("normal firstFace:",[firstFace.a,firstFace.b,firstFace.c])
-        print("normal firstFace point:",[firstFace.pIndex1,firstFace.pIndex2,firstFace.pIndex3])
-
-        
         face1=Face(self.pointSet,3,firstFace.pIndex1,firstFace.pIndex2)
-        print("normal face1 翻轉前:",[face1.a,face1.b,face1.c])
-        print("normal face1 point:",[face1.pIndex1,face1.pIndex2,face1.pIndex3])
         if face1.isVisible(self.firstFaceCentroid):face1.flip()
-        print("normal face1:",[face1.a,face1.b,face1.c])
-        print("normal face1 point:",[face1.pIndex1,face1.pIndex2,face1.pIndex3])
-        if not face1.isVisible(self.firstFaceCentroid) : print("翻轉成功")
         
         face2=Face(self.pointSet,3,firstFace.pIndex2,firstFace.pIndex3)
-        print("normal face2 翻轉前:",[face2.a,face2.b,face2.c])
-        print("normal face2 point:",[face2.pIndex1,face2.pIndex2,face2.pIndex3])
         if face2.isVisible(self.firstFaceCentroid):face2.flip()
-        print("normal face2:",[face2.a,face2.b,face2.c])
-        print("normal face2 point:",[face2.pIndex1,face2.pIndex2,face2.pIndex3])
-        if not face2.isVisible(self.firstFaceCentroid) : print("翻轉成功")
        
         face3=Face(self.pointSet,3,firstFace.pIndex3,firstFace.pIndex1)
-        print("normal face3 翻轉前:",[face3.a,face3.b,face3.c])
-        print("normal face3 point:",[face3.pIndex1,face3.pIndex2,face3.pIndex3])
         if face3.isVisible(self.firstFaceCentroid):face3.flip()
-        print("normal face3:",[face3.a,face3.b,face3.c])
-        print("normal face3 point:",[face3.pIndex1,face3.pIndex2,face3.pIndex3])
-        if not face3.isVisible(self.firstFaceCentroid) : print("翻轉成功")
 
         validFaces=[firstFace,face1,face2,face3]
         visibleFaces=[]
@@ -71,11 +51,18 @@ class ConvexHull3D(object):
                 visibleFaces.clear()
                 print(point)
                 for fIndex, face in enumerate(validFaces):
-                    print(face.a*point[0] + face.b*point[1]+ face.c*point[2]+face.d)
-                    if face.isVisible(point):
-                        print("face:",face)
+                    compareSet=[]
+                    for i,p in enumerate(self.pointSet):
+                        if i<index and i != face.pIndex1 and i != face.pIndex2 and i != face.pIndex3: 
+                            compareSet.append(face.isVisible(p))
+                    compareSet_=np.sign(compareSet)
+                    compareSet_=list(set(compareSet_))    
+                    print("compareSet:",compareSet)
+                    print("正負號",compareSet_)
+                    if np.sign(face.isVisible(point))!=compareSet_:
                         visibleFaces.append(face)
                 print("pointIndex: %d,visibleFaces: %s"%(index,visibleFaces))
+                print(compareSet)
             
                 if len(visibleFaces) == 0:continue
                 
