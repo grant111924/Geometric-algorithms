@@ -59,24 +59,25 @@ class ConvexHull3D(object):
         
         for pointIndex , point in enumerate(self.pointSet):
             if  pointIndex>3 and len(self.FConflitP[pointIndex]) != 0:
-                print("visiblePairList",self.visiblePairList)
-                print("FConflitP",self.FConflitP)
-                print("PConflitF",self.PConflitF)
+                #print("visiblePairList",self.visiblePairList)
+                print("開始FConflitP",self.FConflitP)
+                print("開始PConflitF",self.PConflitF)
                 
                 #先刪除 從validFaces中 可以看到的面  並暫存舊的validFaces
                 visibleFaces=[]
-                oldValidFace=[]
+                validFaceAfterDel=[]
                 for faceValidIndex, faceValid in enumerate(self.validFaces):
                     for x, faceSeeIndex in enumerate(self.FConflitP[pointIndex]):
                         if faceValidIndex == faceSeeIndex : 
                             visibleFaces.append(faceValid)
+                            validFaceAfterDel.append(None)
                         else :
-                            oldValidFace.append(faceValid)
+                            validFaceAfterDel.append(faceValid)
                             
-                for faceVisibleIndex, faceVisible in enumerate(visibleFaces):
+                """for faceVisibleIndex, faceVisible in enumerate(visibleFaces):
                     if faceVisible in self.validFaces:
-                        self.validFaces.remove(faceVisible)
-
+                        self.validFaces.remove(faceVisible)"""
+                print("visibleFaces",visibleFaces)
                 boundaryPoint=[]      
                 for x, faceSee in enumerate(visibleFaces):
                     boundaryPoint+=faceSee.pointList
@@ -92,56 +93,78 @@ class ConvexHull3D(object):
                         tmpFace=Face(self.pointSet,pointIndex,edge[0],edge[1])
                         tmpFacePlane=tmpFace.getPlane()
                         print("edge",edge)
-
-
-                        neighborFaceList=[]
-                        for fIndex, face in enumerate(self.validFaces):
-                            for eIndex, e in enumerate(face.edgeList):
-                                if e[0] in edge and e[1]  in edge: neighborFaceList.append(face)
-                        
-                        for fIndex, nFace in enumerate(neighborFaceList):
-                            neighborFacePlane=nFace.getPlane()      
-                            if np.all(neighborFacePlane*len(tmpFacePlane) - tmpFacePlane*len(neighborFacePlane)) == 0:
-                                print("共面")
-                                self.validFaces.append(tmpFace)
-                                print("PConflitF",self.PConflitF)
-                                print("FConflitP",self.FConflitP)
-                                self.validFaces.append(tmpFace)
-                                self.PConflitF.append(self.PConflitF[fIndex])
-                                for i,item in enumerate(self.FConflitP):
-                                    if i in self.PConflitF[fIndex]: 
-                                        item.append()
-
-                                print("PConflitF",self.PConflitF)
-                                print("FConflitP",self.FConflitP)
-                            else:
-                                print("加入")
-                                self.validFaces.append(tmpFace)
-                                self.__update(pointIndex)
-                        
                     else:
                         edge=[sortBoundaryPoint[i],sortBoundaryPoint[0]]
                         tmpFace=Face(self.pointSet,pointIndex,sortBoundaryPoint[i],sortBoundaryPoint[0])
-                        self.validFaces.append(tmpFace)
-                        self.__update(pointIndex)
-                        #tmpFacePlane=tmpFace.getPlane()
-                        """
-                        for fIndex, face in enumerate(self.validFaces):
+                        tmpFacePlane=tmpFace.getPlane()
+
+                    neighborFaceList=[]
+                    for fIndex, face in enumerate(validFaceAfterDel):
+                        if face != None :
                             for eIndex, e in enumerate(face.edgeList):
-                                if e[0] in edge and e[1]  in edge:
-                                    aroundFace=face
-                                    aroundFacePlane=aroundFace.getPlane()      
-                                    if np.all(aroundFacePlane*len(tmpFacePlane) - tmpFacePlane*len(aroundFacePlane)) == 0:
-                                        print("共面")
-                                        self.validFaces.append(tmpFace)
-                                    else:
-                                        print("加入")
-                                        self.validFaces.append(tmpFace)
-                        """
+                                if e[0] in edge and e[1]  in edge: neighborFaceList.append(face)
+                    
+                    #print("PConflitF",self.PConflitF)
+                    #print("FConflitP",self.FConflitP)
+                    for fIndex, nFace in enumerate(neighborFaceList):
+                        neighborFacePlane=nFace.getPlane()      
+                        if np.all(neighborFacePlane*len(tmpFacePlane) - tmpFacePlane*len(neighborFacePlane)) == 0:
+                            print("共面")
+                            
+                            validFaceAfterDel.append(tmpFace)
+                            PConflitF_addItem=self.PConflitF[fIndex]
+                            self.PConflitF.append(PConflitF_addItem)#與跟他共面所看到的點一致
+
+                            for i,item in enumerate(self.FConflitP):
+                                if i in PConflitF_addItem: 
+                                    item.append(len(validFaceAfterDel)-1)
+
+                        else:
+                            print("加入")
+                            validFaceAfterDel.append(tmpFace)
+                            f1=nFace
+                            f2=None
+                            for vfIndex, vf in enumerate(visibleFaces):
+                                for eIndex, e  in enumerate(vf.edgeList):
+                                    if e[0] in edge and e[1]  in edge: f2=vf
+
+                            f1Index=self.validFaces.index(f1)
+                            f2Index=self.validFaces.index(f2)
+                            peList=self.PConflitF[f1Index]+self.PConflitF[f2Index]
+                            peList=list(set(peList))    
+
+                            
+                            PConflitF_addItem=[]
+                            for i, p in enumerate(peList):
+                                if np.sign(tmpFace.isVisible(self.pointSet[p])) != np.sign(tmpFace.isVisible(self.centerPoint)):
+                                    PConflitF_addItem.append(p)
+
+                            self.PConflitF.append(PConflitF_addItem)
+                            for i,item in enumerate(self.FConflitP):
+                                if i in PConflitF_addItem: 
+                                    item.append(len(validFaceAfterDel)-1)
+                    print("消除前PConflitF",self.PConflitF)
+                    print("消除前FConflitP",self.FConflitP)
+                    print(validFaceAfterDel)
+                    #消除該點在PConflictF的每一項 消除面為FConflitP的None 將該面index從PConflictF的每一項中消除
+                    for pf, pfItem in enumerate(self.PConflitF):
+                        if pointIndex in pfItem: pfItem.remove(pointIndex)
+                    for fp, fpItem in enumerate(self.FConflitP):
+                        if fpItem == None :
+                            for pf, pfItem in enumerate(self.PConflitF): 
+                                if fp in pfItem :pfItem.remove(fp)
+
+                    print("PConflitF",self.PConflitF)
+                    print("FConflitP",self.FConflitP)
+                    break 
+                        
+                     
                     """self.result=[]
                     for finalIndex, finalFace in enumerate(self.validFaces):
                         self.result.append([finalFace.pIndex1,finalFace.pIndex2,finalFace.pIndex3])
                     self.__plot()"""  
+                self.validFaces=validFaceAfterDel 
+               
                     #self.__update(pointIndex)
                 
         
