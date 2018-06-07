@@ -52,7 +52,7 @@ class ConvexHull3D(object):
                 visibleFaces.clear()
                 print("pointIndex: %d,validFaces: %s"%(index,validFaces))
                 for fIndex, face in enumerate(validFaces):
-                    if face.isVisible(point) != face.isVisible(self.firstFaceCentroid):
+                    if np.sign(face.isVisible(point)) != np.sign(face.isVisible(self.firstFaceCentroid)):
                         visibleFaces.append(face)
                 print("pointIndex: %d,visibleFaces: %s"%(index,visibleFaces))
             
