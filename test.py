@@ -113,3 +113,24 @@ def find_tetrahedron(set_P) :
             if np.dot(p1p4,np.cross(p1p2,p1p3)) !=0: break # AD。(AB X AC) = 0 => coplanar
         else : continue
     return p1,p2,p3,p4,set_P     
+
+
+if len(FConflitP[pointIndex]) == 1:
+#faceIndex=FConflitP[pointIndex][0]
+face=visibleFaces[0]
+validFaces.append(Face(self.pointSet,pointIndex,face.pIndex1,face.pIndex2))  
+validFaces.append(Face(self.pointSet,pointIndex,face.pIndex2,face.pIndex3)) 
+validFaces.append(Face(self.pointSet,pointIndex,face.pIndex3,face.pIndex1)) 
+elif len(FConflitP[pointIndex]) > 1 :
+boundaryPoint=[]
+for x, faceSee in enumerate(visibleFaces):
+boundaryPoint+=faceSee.pointList
+print(boundaryPoint)
+boundaryPoint=list(set(boundaryPoint))
+print("邊界點:",point,boundaryPoint) 
+print(self.__counterclockwise(point,boundaryPoint))
+for i in range(len(boundaryPoint)):
+if i+1 < len(boundaryPoint):
+validFaces.append(Face(self.pointSet,pointIndex,boundaryPoint[i],boundaryPoint[i+1]))
+else:
+validFaces.append(Face(self.pointSet,pointIndex,boundaryPoint[i],boundaryPoint[0]))

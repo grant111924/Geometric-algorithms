@@ -7,10 +7,11 @@ class Face(object):
         self.pIndex2=pIndex2
         self.pIndex3=pIndex3
         self.pointList=[pIndex1,pIndex2,pIndex3]
+        self.edgeList=[[pIndex1,pIndex2],[pIndex2,pIndex3],[pIndex3,pIndex1]]
         self.a,self.b,self.c,self.d=None,None,None,None
-        
         self.__computePlane()
-        
+    def getPlane(self):
+        return  np.array([self.a,self.b,self.c,self.d]) 
     def isVisible(self, pointR):
         return (self.a*pointR[0] + self.b*pointR[1]+ self.c*pointR[2]+self.d)
 
@@ -30,10 +31,11 @@ class Face(object):
         vector1=self.pointSet[self.pIndex1]
         vector2=self.pointSet[self.pIndex2]
         vector3=self.pointSet[self.pIndex3]
-        self.a = vector1[1]*(vector2[2]-vector3[2]) + vector2[1]*(vector3[2]-vector1[2]) + vector3[1]*(vector1[2]-vector2[2])
-        self.b = vector1[2]*(vector2[1]-vector3[1]) + vector2[2]*(vector3[1]-vector1[1]) + vector3[2]*(vector1[1]-vector2[1])
-        self.c = vector1[0]*(vector2[1]-vector3[1]) + vector2[0]*(vector3[1]-vector1[1]) + vector3[0]*(vector1[1]-vector2[1])
-        self.d = -((vector1[0]*(vector2[1]*vector3[2]-vector3[1]*vector2[2])) + \
-                    (vector2[0]*(vector3[1]*vector1[2]-vector1[1]*vector3[2])) + \
-                    (vector3[0]*(vector1[1]*vector2[2]-vector2[1]*vector1[2])))
+        
+        self.a = (vector1[1]-vector2[1])*(vector3[2]-vector1[2])-(vector2[2]-vector1[2])*(vector3[1]-vector1[1])
+        self.b = (vector2[2]-vector1[2])*(vector3[0]-vector1[0])-(vector2[0]-vector1[0])*(vector3[2]-vector1[2])
+        self.c = (vector2[0]-vector1[0])*(vector3[1]-vector1[1])-(vector2[1]-vector1[1])*(vector3[0]-vector1[0])
+        self.d = 0-(self.a*vector1[0]+self.b*vector1[1]+self.c*vector1[2])
+               
     
+

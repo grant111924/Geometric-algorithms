@@ -100,30 +100,7 @@ def is_Coplanar(plane1,plane2):
     plane2=np.array(plane2)
     return np.all(plane1 * np.linalg.norm(plane2) - plane2 * np.linalg.norm(plane1) == 0)
 
-def conflict_graph(num,set_Remain,tetrahedron):
-    set_facet=tetrahedron
-    conflictListP=[]
-    conflictListF=[]
-    for pointIndex, point in enumerate(set_P):
-        if pointIndex > num : 
-            facePairList=[]
-            for faceIndex, face in enumerate(set_facet):
-                a,b,c,d=compute_plane(face)
-                if is_Visible(a,b,c,d,point):
-                    facePairList.append(faceIndex)
-            conflictListP.append(facePairList)
-        else :
-            conflictListP.append([])
-    for faceIndex, face in enumerate(set_facet):
-        pointPairList=[]
-        a,b,c,d=compute_plane(face)
-        for pointIndex, point in enumerate(set_P):
-            if pointIndex > num:
-                if is_Visible(a,b,c,d,point):
-                    pointPairList.append(pointIndex)
-        conflictListF.append(pointPairList)
 
-    return conflictListP,conflictListF
 
 def counterclockwise(p,bList,set_P):
     totalPointSum=np.array([0,0,0])

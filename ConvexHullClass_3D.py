@@ -6,7 +6,7 @@ import random
 from tqdm import tqdm
 import time
 class ConvexHull3D(object):
-    def __init__(self,low=0,high=5,size=(10,3)):
+    def __init__(self,low=1,high=5,size=(10,3)):
         self.pointSet=np.random.randint(low,high,size=size)
         """count=10
         pointSet=np.zeros((count,3))
@@ -26,6 +26,7 @@ class ConvexHull3D(object):
     def process(self):
         firstFace=Face(self.pointSet,0,1,2)
         self.firstFaceCentroid=self.__centroid(3,firstFace)
+        print(self.firstFaceCentroid)
         if firstFace.isVisible(self.firstFaceCentroid):firstFace.flip()
         face1=Face(self.pointSet,3,firstFace.pIndex1,firstFace.pIndex2)
         if face1.isVisible(self.firstFaceCentroid):face1.flip()
@@ -49,20 +50,11 @@ class ConvexHull3D(object):
         for index , point in enumerate(self.pointSet):
             if index > 3:
                 visibleFaces.clear()
-                print(point)
+                print("pointIndex: %d,validFaces: %s"%(index,validFaces))
                 for fIndex, face in enumerate(validFaces):
-                    compareSet=[]
-                    for i,p in enumerate(self.pointSet):
-                        if i<index and i != face.pIndex1 and i != face.pIndex2 and i != face.pIndex3: 
-                            compareSet.append(face.isVisible(p))
-                    compareSet_=np.sign(compareSet)
-                    compareSet_=list(set(compareSet_))    
-                    print("compareSet:",compareSet)
-                    print("正負號",compareSet_)
-                    if np.sign(face.isVisible(point))!=compareSet_:
+                    if face.isVisible(point) != face.isVisible(self.firstFaceCentroid):
                         visibleFaces.append(face)
                 print("pointIndex: %d,visibleFaces: %s"%(index,visibleFaces))
-                print(compareSet)
             
                 if len(visibleFaces) == 0:continue
                 
@@ -99,10 +91,7 @@ class ConvexHull3D(object):
                         validFaces.append(tmpFace)
                 
                 print("validFaces:",len(validFaces))
-                self.result=[]
-                for finalIndex, finalFace in enumerate(validFaces):
-                    self.result.append([finalFace.pIndex1,finalFace.pIndex2,finalFace.pIndex3])
-                self.__plot()
+                
                     
          
 
