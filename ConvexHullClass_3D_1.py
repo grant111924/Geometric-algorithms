@@ -79,11 +79,12 @@ class ConvexHull3D(object):
                         self.validFaces.remove(faceVisible)"""
                 print("visibleFaces",visibleFaces)
                 boundaryPoint=[]      
+
                 for x, faceSee in enumerate(visibleFaces):
                     boundaryPoint+=faceSee.pointList
                 #print(boundaryPoint)
                 boundaryPoint=list(set(boundaryPoint)) # 去除重複邊界點
-                print("邊界點:",point,boundaryPoint) 
+                #print("邊界點:",point,boundaryPoint) 
                 #print('排序邊界點:',self.__counterclockwise(point,boundaryPoint))
                 sortBoundaryPoint=boundaryPoint
                 #形成新的面 
@@ -103,9 +104,7 @@ class ConvexHull3D(object):
                         if face != None :
                             for eIndex, e in enumerate(face.edgeList):
                                 if e[0] in edge and e[1]  in edge: neighborFaceList.append(face)
-                    
-                    #print("PConflitF",self.PConflitF)
-                    #print("FConflitP",self.FConflitP)
+                    print("neighborFaceList",neighborFaceList)
                     for fIndex, nFace in enumerate(neighborFaceList):
                         neighborFacePlane=nFace.getPlane()      
                         if np.all(neighborFacePlane*len(tmpFacePlane) - tmpFacePlane*len(neighborFacePlane)) == 0:
@@ -212,6 +211,16 @@ class ConvexHull3D(object):
         p3=self.pointSet[face.pIndex3]
         return  np.array( [(p[0]+p1[0]+p2[0]+p3[0])/4,(p[1]+p1[1]+p2[1]+p3[1])/4,(p[2]+p1[2]+p2[2]+p3[2])/4])
 
+    def __deteleFace(self):
+        visibleFaces=[]
+        validFaceAfterDel=[]
+        for faceValidIndex, faceValid in enumerate(self.validFaces):
+            for x, faceSeeIndex in enumerate(self.FConflitP[pointIndex]):
+                if faceValidIndex == faceSeeIndex : 
+                    visibleFaces.append(faceValid)
+                    validFaceAfterDel.append(None)
+                else :
+                    validFaceAfterDel.append(faceValid)
     def __update(self,index):
         self.visiblePairList.clear()
         for pIndex, point in enumerate(self.pointSet):
