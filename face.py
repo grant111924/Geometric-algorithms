@@ -19,8 +19,8 @@ class Face(object):
         p1=self.pointSet[self.pIndex1]
         p2=self.pointSet[self.pIndex2]
         p3=self.pointSet[self.pIndex3]
-        self.result=np.array([(p1[0]+p2[0]+p3[0])/3,(p1[1]+p2[1]+p3[1])/3,(p1[2]+p2[2]+p3[2])/3])
-
+        return np.array([(p1[0]+p2[0]+p3[0])/3,(p1[1]+p2[1]+p3[1])/3,(p1[2]+p2[2]+p3[2])/3])
+        
     def flip(self):
         t=self.pIndex1
         self.pIndex1=self.pIndex2

@@ -7,22 +7,31 @@ from tqdm import tqdm
 import time
 
 class ConvexHull3D(object):
-    def __init__(self,low=1,high=100,size=(10,3)):
+    def __init__(self,low=1,high=10,size=(8,3)):
         self.pointSet=np.random.randint(low,high,size=size)
+        """count=25
+        pointSet=np.zeros((count,3))
+        for i in range(count):
+            radius= (5 + np.random.random_sample())* 5
+            theta= np.random.random_sample()*2* np.pi
+            phi=np.random.random_sample() * np.pi
+            pointSet[i][0]=np.cos( theta ) * np.sin( phi ) * radius
+            pointSet[i][1]=np.cos( phi ) * radius
+            pointSet[i][2]=np.sin( theta ) * np.sin( phi ) * radius"""
+        #self.pointSet=pointSet
         self.plt=plt
+        self.fig=self.plt.figure()
     def process(self):
         #四面體成形
-        self.__find_tetrahedron()
-        self.validFaces=self.tetrahedron
+        self.validFaces=self.__find_tetrahedron()
         #畫初始四面體
         self.result=[]
-        for finalIndex, finalFace in enumerate(self.validFaces):
+        for finalIndex, finalFace in enumerate(self.tetrahedron):
             self.result.append([finalFace.pIndex1,finalFace.pIndex2,finalFace.pIndex3])
         self.__plot()
 
 
 
-        
         for pIndex, point in enumerate(self.pointSet):
             print("pointIndex:%d point: %s"%(pIndex,point))
             if  pIndex > 3:
@@ -34,24 +43,76 @@ class ConvexHull3D(object):
                         visibleFaces.append(face)
                 print("visibleFaces",visibleFaces)
 
-                #收集所有面的edge
-                
+                if  len(visibleFaces) == 0 : continue
+
                 # 刪除 所有看到的面的邊
                 for vF, vFace in enumerate(self.validFaces):
                     if vFace in visibleFaces:
                         self.validFaces.remove(vFace)
                 print("validFaces 刪除後",self.validFaces)
-                self.result=[]
-                for finalIndex, finalFace in enumerate(self.validFaces):
-                    self.result.append([finalFace.pIndex1,finalFace.pIndex2,finalFace.pIndex3])
-                self.__plot()
-                break
+
+                if  len(visibleFaces) == 1 :
+                    face=visibleFaces[0]
+                    self.validFaces.append(Face(self.pointSet,pIndex,face.pIndex1,face.pIndex2))
+                    self.validFaces.append(Face(self.pointSet,pIndex,face.pIndex2,face.pIndex3))
+                    self.validFaces.append(Face(self.pointSet,pIndex,face.pIndex3,face.pIndex1))
+                else :
+                    tmpFaces=[]
+                    for fIndex, face in enumerate(visibleFaces):
+                        tmpFaces.append(Face(self.pointSet,pIndex,face.pIndex1,face.pIndex2))
+                        tmpFaces.append(Face(self.pointSet,pIndex,face.pIndex2,face.pIndex3))
+                        tmpFaces.append(Face(self.pointSet,pIndex,face.pIndex3,face.pIndex1))
+                    """for  tIndex , tFace in enumerate(tmpFaces):
+                        for oIndex, oFace in enumerate(tmpFaces):
+                            if tIndex != oIndex :
+                                if np.sign(tFace.isVisible(oFace.getCentroid())) != np.sign(tFace.isVisible(self.centerPoint)):
+                                        tFace=None
+                                        break"""
+
+                    for tIndex ,tFace in enumerate(tmpFaces):
+                        for i, p in enumerate (self.pointSet):
+                            if i <=  pIndex :
+                                if  np.sign(tFace.isVisible(p)) != 0 and np.sign(tFace.isVisible(self.centerPoint)) != np.sign(tFace.isVisible(p)):
+                                    tFace=None
+                                    break
+                        if tFace != None: self.validFaces.append(tFace)
+                
+                #去除相同面
+                for fIndex , face in enumerate(self.validFaces):   
+                    print("fIndex :%d PointSET %s ："%(fIndex,face.pointList))
+                    for oIndex, other in enumerate(self.validFaces):
+                        if fIndex!=oIndex and other.pIndex1 in face.pointList and other.pIndex2 in face.pointList and other.pIndex3 in face.pointList:
+                            print(other.pointList)
+                            self.validFaces.remove(other)   
+
+                    
+                                      
+
+            else : continue
+            self.result=[]
+            for finalIndex, finalFace in enumerate(self.validFaces):
+                self.result.append([finalFace.pIndex1,finalFace.pIndex2,finalFace.pIndex3])
+            self.__plot()
             
+            
+
+
+        for fIndex , face in enumerate(self.validFaces):   
+            for i, p in enumerate (self.pointSet):
+                if i not in face.pointList and np.sign(face.isVisible(p))!=np.sign(face.isVisible(self.centerPoint)):
+                    print("face",face.pointList)
+                    self.validFaces.remove(face)
+                    break  
+        self.result=[]
+        print("finafl")
+        for finalIndex, finalFace in enumerate(self.validFaces):
+            self.result.append([finalFace.pIndex1,finalFace.pIndex2,finalFace.pIndex3])
+        self.__plot(True)
 
 
 
                 
-
+                
     def __find_tetrahedron(self):
         pointSet=self.pointSet
         while True:
@@ -67,7 +128,7 @@ class ConvexHull3D(object):
                     self.centerPoint=self.__centroid(3,face)
                     break
             else:self.pointSet=np.random.shuffle(pointSet)
-       
+        return [face,face1,face2,face3]
     def __centroid(self,index,face):
         p=self.pointSet[index]
         p1=self.pointSet[face.pIndex1]
@@ -76,9 +137,9 @@ class ConvexHull3D(object):
         return  np.array( [(p[0]+p1[0]+p2[0]+p3[0])/4,(p[1]+p1[1]+p2[1]+p3[1])/4,(p[2]+p1[2]+p2[2]+p3[2])/4])
 
 
-    def __plot(self):
-        fig=self.plt.figure()
-        ax=fig.add_subplot(111,projection='3d')
+    def __plot(self,final=False):
+        self.fig.clf()
+        ax=self.fig.add_subplot(111,projection='3d')
         xs=self.pointSet[:,0]
         ys=self.pointSet[:,1] 
         zs=self.pointSet[:,2]
@@ -95,7 +156,11 @@ class ConvexHull3D(object):
             ax.plot ( [ xv[0][0], xv[1][0] ], [ xv[0][1], xv[1][1] ], [ xv[0][2],xv[1][2] ], 'r' )
             ax.plot ( [ xv[0][0], xv[2][0] ], [ xv[0][1], xv[2][1] ], [ xv[0][2], xv[2][2] ], 'r' )
             ax.plot ( [ xv[1][0], xv[2][0] ], [ xv[1][1], xv[2][1] ], [ xv[1][2], xv[2][2] ], 'r' )
-        plt.show()
+        if final==False:
+            plt.show(block=False)
+            plt.pause(0.1)
+        else :
+            plt.show()
 if __name__ == "__main__":
     c=ConvexHull3D()
     c.process()
