@@ -7,7 +7,7 @@ from tqdm import tqdm
 import time
 
 class ConvexHull3D(object):
-    def __init__(self,low=1,high=10,size=(8,3)):
+    def __init__(self,low=1,high=10,size=(10,3)):
         self.pointSet=np.random.randint(low,high,size=size)
         """count=25
         pointSet=np.zeros((count,3))

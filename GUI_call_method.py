@@ -1,7 +1,8 @@
 import matplotlib
 import tkinter as tk
 from ConvexHullClass_2D import ConvexHull
-
+from ConvexHullClass_3D_2 import ConvexHull3D
+from SmallestDiskClass import SmallestDisk
 
 window =tk.Tk()
 window.title("Project Visualization")
@@ -19,13 +20,17 @@ def print_selection():
         l.config(text="Convex hull 2D")
         ConvexHull().gift_wrapping()
     elif var.get() == 2:
-        l.config(text="Convex hull 3D")
+        l.config(text="Smallest Circle Disk")
+        SmallestDisk().min_circle()
     elif var.get()== 3:
+        l.config(text="Convex hull 3D")
+        ConvexHull3D().process()
+    elif var.get() == 4:
         l.config(text="Delaunay Triangulation")
-         
 tk.Radiobutton(window, text='Convex hull 2D',variable=var, value='1',font=("Courier",16),command=print_selection,indicatoron=0).pack(anchor="w")
-tk.Radiobutton(window, text='Convex hull 3D',variable=var, value='2',font=("Courier",16),command=print_selection,indicatoron=0).pack(anchor="w")
-tk.Radiobutton(window, text='Delaunay Triangulation',variable=var, value='3',font=("Courier",16),command=print_selection,indicatoron=0).pack(anchor="w")
+tk.Radiobutton(window, text='Smallest Circle Disk',variable=var, value='2',font=("Courier",16),command=print_selection,indicatoron=0).pack(anchor="w")
+tk.Radiobutton(window, text='Convex hull 3D',variable=var, value='3',font=("Courier",16),command=print_selection,indicatoron=0).pack(anchor="w")
+tk.Radiobutton(window, text='Delaunay Triangulation',variable=var, value='4',font=("Courier",16),command=print_selection,indicatoron=0).pack(anchor="w")
 
 
 window.mainloop()

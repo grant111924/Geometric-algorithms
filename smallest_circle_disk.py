@@ -1,7 +1,6 @@
 import numpy as np 
 import matplotlib.pyplot as plt 
 import math, random
-from scipy.linalg import solve
 def generate_data(low,high,size):
     return np.random.randint(low,high,size=size)
 
