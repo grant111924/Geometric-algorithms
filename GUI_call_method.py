@@ -3,7 +3,7 @@ import tkinter as tk
 from ConvexHullClass_2D import ConvexHull
 from ConvexHullClass_3D_2 import ConvexHull3D
 from SmallestDiskClass import SmallestDisk
-
+from DelaunayTriangulation import DelaunayTriangulation
 window =tk.Tk()
 window.title("Project Visualization")
 w = window.winfo_screenwidth()
@@ -27,6 +27,8 @@ def print_selection():
         ConvexHull3D().process()
     elif var.get() == 4:
         l.config(text="Delaunay Triangulation")
+        DelaunayTriangulation().cal_delaunay_triangle()
+
 tk.Radiobutton(window, text='Convex hull 2D',variable=var, value='1',font=("Courier",16),command=print_selection,indicatoron=0).pack(anchor="w")
 tk.Radiobutton(window, text='Smallest Circle Disk',variable=var, value='2',font=("Courier",16),command=print_selection,indicatoron=0).pack(anchor="w")
 tk.Radiobutton(window, text='Convex hull 3D',variable=var, value='3',font=("Courier",16),command=print_selection,indicatoron=0).pack(anchor="w")
